@@ -2,6 +2,8 @@ import csv
 import networkx as nx
 from datetime import datetime
 import pickle
+from functools import reduce
+from tabulate import tabulate
 import parse_files
 from entities.status import Status
 from entities.comment import Comment
@@ -92,7 +94,7 @@ if __name__ == "__main__":
 
     # users = load_users("dataset/friends.csv")
     # for row in parse_files.load_statuses("dataset/original_statuses.csv"):
-    #     status = Status(row[0], row[1], row[2], row[3], datetime.strptime(row[4], "%Y-%m-%d %H:%M:%S"), row[5], row[6], row[7], row[8], row[9], row[10], row[11], row[12], row[13], row[14])
+    #     status = Status(row[0], row[1], row[2], row[3], datetime.strptime(row[4], "%Y-%m-%d %H:%M:%S"), row[5], int(row[6]), int(row[7]), int(row[8]), int(row[9]), int(row[10]), int(row[11]), int(row[12]), int(row[13]), int(row[14]))
     #     if status.author not in statuses:
     #         statuses[status.author] = [status]
     #     else:
@@ -113,15 +115,24 @@ if __name__ == "__main__":
     #         reactions[reaction.status_id].append(reaction)
     
     # for row in parse_files.load_comments("dataset/original_comments.csv"):
-    #     comment = Comment(row[0], row[1], row[2], row[3], row[4], datetime.strptime(row[5], "%Y-%m-%d %H:%M:%S"), row[6], row[7])
+    #     comment = Comment(row[0], row[1], row[2], row[3], row[4], datetime.strptime(row[5], "%Y-%m-%d %H:%M:%S"), int(row[6]), int(row[7]))
     #     if comment.status_id not in comments:
     #         comments[comment.status_id] = [comment]
     #     else:
     #         comments[comment.status_id].append(comment)
 
     # graph = create_graph(users)
+
+    name = input("Enter a user's name: ")
+    while name not in users:
+        print("User with that name doesnt exist.")
+        name = input("Enter a user's name: ")
+
+    recommended_statuses = sorted(reduce(lambda x, y: x + y, statuses.values()), key = lambda status: 0 if graph.get_edge_data(name, status.author) is None else calculate_status_weight(status) + graph.get_edge_data(name, status.author)['weight'], reverse = True)
     
-    
+    for status in recommended_statuses[:10]:
+        print(tabulate([[f"{status.message[:150]}...", status.author]], headers = ["Message", "Author"], tablefmt="fancy_grid"))
+
     # with open("user_graph.pickle", 'wb') as f:
     #     pickle.dump(graph, f)
     
