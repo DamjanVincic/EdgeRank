@@ -19,7 +19,14 @@ comments = {}
 def calculate_status_weight(status):
     weight = 0
     weight += status.comment_count*1.0 + status.share_count*2.0 + status.like_count*0.5 + status.num_loves*1.0 + status.num_wows*1.5 + status.num_hahas*0.5 * status.num_sads*0.25 + status.num_angrys*0.25
-    weight /= max(1, (datetime.now() - status.publish_time).days)
+    difference = (datetime.now() - status.publish_time).days
+    if difference < 1:
+        time_decay = 1
+    elif difference < 3:
+        time_decay = 5*difference
+    else:
+        time_decay = 20*difference
+    weight /= time_decay
     return weight
 
 def calculate_user_affinity(user1, user2):
@@ -69,7 +76,7 @@ def load_users(path):
     return users
 
 def create_graph(data):
-    graph = nx.Graph()
+    graph = nx.DiGraph()
     for user, friends in data.items():
         graph.add_node(user)
         for friend in friends:
@@ -84,7 +91,7 @@ if __name__ == "__main__":
         users = data["users"]
         statuses = data["statuses"]
         shares = data["shares"]
-        reactions = data["shares"]
+        reactions = data["reactions"]
         comments = data["comments"]
     
 
@@ -123,12 +130,12 @@ if __name__ == "__main__":
 
     # graph = create_graph(users)
 
-    name = input("Enter a user's name: ")
+    name = input("Enter a user's name: ").title()
     while name not in users:
         print("User with that name doesnt exist.")
-        name = input("Enter a user's name: ")
+        name = input("Enter a user's name: ").title()
 
-    recommended_statuses = sorted(reduce(lambda x, y: x + y, statuses.values()), key = lambda status: 0 if graph.get_edge_data(name, status.author) is None else calculate_status_weight(status) + graph.get_edge_data(name, status.author)['weight'], reverse = True)
+    recommended_statuses = sorted(reduce(lambda x, y: x + y, statuses.values()), key = lambda status: calculate_status_weight(status) if graph.get_edge_data(name, status.author) is None else calculate_status_weight(status) + 5*graph.get_edge_data(name, status.author)['weight'], reverse = True)
     
     for status in recommended_statuses[:10]:
         print(tabulate([[f"{status.message[:150]}...", status.author]], headers = ["Message", "Author"], tablefmt="fancy_grid"))
