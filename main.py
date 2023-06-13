@@ -13,51 +13,63 @@ shares = {}
 reactions = {}
 comments = {}
 
+def calculate_status_weight(status):
+    weight = 0
+    weight += status.comment_count*1.0 + status.share_count*2.0 + status.like_count*0.5 + status.num_loves*1.0 + status.num_wows*1.5 + status.num_hahas*0.5 * status.num_sads*0.25 + status.num_angrys*0.25
+    weight /= max(1, (datetime.now() - status.publish_time).days)
+    return weight
+
 def calculate_user_affinity(user1, user2):
     affinity = 0
 
-    for status in statuses[user2]:
-        status_affinity = 0
-        for share in shares[status.id]:
-            if share.sharer == user1:
-                status_affinity += 2.0
-        
-        for reaction in reactions[status.id]:
-            if reaction.reactor == user1:
-                reaction_time_decay = max(1, (datetime.now() - reaction.reaction_time).days)
-                if reaction.type == "likes":
-                    status_affinity += 0.5 / reaction_time_decay
-                elif reaction.type == "loves":
-                    status_affinity += 1.0 / reaction_time_decay
-                elif reaction.type == "wows":
-                    status_affinity += 1.5 / reaction_time_decay
-                elif reaction.type =="hahas":
-                    status_affinity += 0.5 / reaction_time_decay
-                elif reaction.type == "sads":
-                    status_affinity += 0.25 / reaction_time_decay
-                elif reaction.type == "angrys":
-                    status_affinity += 0.75 / reaction_time_decay
+    if user2 in statuses:
+        for status in statuses[user2]:
+            status_affinity = 0
+            if status.id in shares:
+                for share in shares[status.id]:
+                    if share.sharer == user1:
+                        status_affinity += 2.0
+            
+            if status.id in reactions:
+                for reaction in reactions[status.id]:
+                    if reaction.reactor == user1:
+                        reaction_time_decay = max(1, (datetime.now() - reaction.reaction_time).days)
+                        if reaction.type == "likes":
+                            status_affinity += 0.5 / reaction_time_decay
+                        elif reaction.type == "loves":
+                            status_affinity += 1.0 / reaction_time_decay
+                        elif reaction.type == "wows":
+                            status_affinity += 1.5 / reaction_time_decay
+                        elif reaction.type =="hahas":
+                            status_affinity += 0.5 / reaction_time_decay
+                        elif reaction.type == "sads":
+                            status_affinity += 0.25 / reaction_time_decay
+                        elif reaction.type == "angrys":
+                            status_affinity += 0.75 / reaction_time_decay
 
-        for comment in comments[status.id]:
-            if comment.author == user1:
-                status_affinity += 1.0 / max(1, (datetime.now() - comment.publish_time).days)
-        
-        affinity += status_affinity
+            if status.id in comments:
+                for comment in comments[status.id]:
+                    if comment.author == user1:
+                        status_affinity += 1.0 / max(1, (datetime.now() - comment.publish_time).days)
+            
+            affinity += status_affinity
 
     return affinity
 
 def load_users(path):
+    users = {}
     with open(path, encoding = 'utf-8') as f:
         reader = csv.reader(f)
         data = list(reader)
-    return data[1:]
+        for row in data[1:]:
+            users[row[0]] = row[2:]
+    return users
 
 def create_graph(data):
     graph = nx.Graph()
-    for row in data:
-        user = row[0]
+    for user, friends in data.items():
         graph.add_node(user)
-        for friend in row[2:]:
+        for friend in friends:
             graph.add_node(friend)
             graph.add_edge(user, friend, weight = calculate_user_affinity(user, friend))
             graph.add_edge(friend, user, weight = calculate_user_affinity(friend, user))
