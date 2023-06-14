@@ -9,6 +9,7 @@ from entities.status import Status
 from entities.comment import Comment
 from entities.share import Share
 from entities.reaction import Reaction
+from entities.trie import Trie
 
 users = {}
 statuses = {}
@@ -98,6 +99,9 @@ if __name__ == "__main__":
     with open("user_graph.pickle", "rb") as f:
         graph = pickle.load(f)
 
+    with open("trie.pickle", "rb") as f:
+        trie = pickle.load(f)
+
 
     # users = load_users("dataset/friends.csv")
     # for row in parse_files.load_statuses("dataset/original_statuses.csv"):
@@ -135,10 +139,27 @@ if __name__ == "__main__":
         print("User with that name doesnt exist.")
         name = input("Enter a user's name: ").title()
 
-    recommended_statuses = sorted(reduce(lambda x, y: x + y, statuses.values()), key = lambda status: calculate_status_weight(status) if graph.get_edge_data(name, status.author) is None else calculate_status_weight(status) + 5*graph.get_edge_data(name, status.author)['weight'], reverse = True)
-    
-    for status in recommended_statuses[:10]:
-        print(tabulate([[f"{status.message[:150]}...", status.author]], headers = ["Message", "Author"], tablefmt="fancy_grid"))
+    while True:
+        print("[1] Get recommended statuses\n[2] Search\n[3] Log Out")
+        try:
+            choice = int(input("> "))
+            if choice == 1:
+                recommended_statuses = sorted(reduce(lambda x, y: x + y, statuses.values()), key = lambda status: calculate_status_weight(status) if graph.get_edge_data(name, status.author) is None else calculate_status_weight(status) + 5*graph.get_edge_data(name, status.author)['weight'], reverse = True)
+                for status in recommended_statuses[:10]:
+                    print(tabulate([[f"{status.message[:150]}...", status.author]], headers = ["Message", "Author"], tablefmt="fancy_grid"))
+            elif choice == 2:
+                query = input("Enter search: ").lower()
+                results = list(trie.search_query(query))
+                results.sort(key = lambda result: result[0] + calculate_status_weight(result[1]) if graph.get_edge_data(name, result[1].author) is None else calculate_status_weight(result[1]) + 5*graph.get_edge_data(name, result[1].author)['weight'], reverse = True)
+                results = list(map(lambda x: x[1], results))
+                for result in results[:10]:
+                    print(tabulate([[f"{result.message[:150]}...", result.author]], headers = ["Message", "Author"], tablefmt="fancy_grid"))
+            elif choice == 3:
+                break
+            else:
+                raise Exception
+        except:
+            pass
 
     # with open("user_graph.pickle", 'wb') as f:
     #     pickle.dump(graph, f)
