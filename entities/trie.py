@@ -53,3 +53,19 @@ class Trie(object):
                     else:
                         results[status_id][0] += filtered_statuses[status_id][0]
         return results.values()
+    
+    def search_prefix(self, prefix):
+        node = self.root
+        for char in prefix:
+            if char not in node.children:
+                return []
+            node = node.children[char]
+        return self.get_words_from_prefix(node, prefix)
+
+    def get_words_from_prefix(self, node, prefix):
+        words = []
+        if node.is_end_of_word:
+            words.append(prefix)
+        for char, child in node.children.items():
+            words.extend(self.get_words_from_prefix(child, prefix + char))
+        return words

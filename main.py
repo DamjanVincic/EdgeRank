@@ -149,6 +149,10 @@ if __name__ == "__main__":
                     print(tabulate([[f"{status.message[:150]}...", status.author]], headers = ["Message", "Author"], tablefmt="fancy_grid"))
             elif choice == 2:
                 query = input("Enter search: ").lower()
+                if query[-1] == '*':
+                    print(trie.search_prefix(query[:-1]))
+                    continue
+                
                 results = list(trie.search_query(query))
                 results.sort(key = lambda result: result[0] + calculate_status_weight(result[1]) if graph.get_edge_data(name, result[1].author) is None else calculate_status_weight(result[1]) + 5*graph.get_edge_data(name, result[1].author)['weight'], reverse = True)
                 results = list(map(lambda x: x[1], results))
