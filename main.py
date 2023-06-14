@@ -11,7 +11,7 @@ from entities.share import Share
 from entities.reaction import Reaction
 from entities.trie import Trie
 
-users = {}
+users = set()
 statuses = {}
 shares = {}
 reactions = {}
@@ -68,22 +68,24 @@ def calculate_user_affinity(user1, user2):
     return affinity
 
 def load_users(path):
-    users = {}
+    users = set()
     with open(path, encoding = 'utf-8') as f:
         reader = csv.reader(f)
         data = list(reader)
         for row in data[1:]:
-            users[row[0]] = row[2:]
+            users.add(row[0])
+            users.update(row[2:])
     return users
 
 def create_graph(data):
     graph = nx.DiGraph()
-    for user, friends in data.items():
-        graph.add_node(user)
-        for friend in friends:
-            graph.add_node(friend)
-            graph.add_edge(user, friend, weight = calculate_user_affinity(user, friend))
-            graph.add_edge(friend, user, weight = calculate_user_affinity(friend, user))
+    graph.add_nodes_from(data)
+    for user1 in data:
+        for user2 in data:
+            if user1 != user2:
+                weight = calculate_user_affinity(user1, user2)
+                if weight != 0:
+                    graph.add_edge(user1, user2, weight = calculate_user_affinity(user1, user2))
     return graph
 
 if __name__ == "__main__":
@@ -94,7 +96,6 @@ if __name__ == "__main__":
         shares = data["shares"]
         reactions = data["reactions"]
         comments = data["comments"]
-    
 
     with open("user_graph.pickle", "rb") as f:
         graph = pickle.load(f)
@@ -154,7 +155,7 @@ if __name__ == "__main__":
                 elif query[0] == '"' and query[-1] == '"':
                     results = trie.search_exact_query(query[1:-1].lower())
                     results.sort(key = lambda status: calculate_status_weight(status) if graph.get_edge_data(name, status.author) is None else calculate_status_weight(status) + 5*graph.get_edge_data(name, status.author)['weight'], reverse = True)
-                    for result in results:
+                    for result in results[:10]:
                         print(tabulate([[f"{result.message[:150]}...", result.author]], headers = ["Message", "Author"], tablefmt="fancy_grid"))
                 else:
                     results = list(trie.search_query(query))
