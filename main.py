@@ -101,7 +101,7 @@ if __name__ == "__main__":
 
     with open("trie.pickle", "rb") as f:
         trie = pickle.load(f)
-
+    # trie = Trie(reduce(lambda x, y: x + y, statuses.values()))
 
     # users = load_users("dataset/friends.csv")
     # for row in parse_files.load_statuses("dataset/original_statuses.csv"):
@@ -150,14 +150,18 @@ if __name__ == "__main__":
             elif choice == 2:
                 query = input("Enter search: ").lower()
                 if query[-1] == '*':
-                    print(trie.search_prefix(query[:-1]))
-                    continue
-                
-                results = list(trie.search_query(query))
-                results.sort(key = lambda result: result[0] + calculate_status_weight(result[1]) if graph.get_edge_data(name, result[1].author) is None else calculate_status_weight(result[1]) + 5*graph.get_edge_data(name, result[1].author)['weight'], reverse = True)
-                results = list(map(lambda x: x[1], results))
-                for result in results[:10]:
-                    print(tabulate([[f"{result.message[:150]}...", result.author]], headers = ["Message", "Author"], tablefmt="fancy_grid"))
+                    print(", ".join(trie.search_prefix(query[:-1])))
+                elif query[0] == '"' and query[-1] == '"':
+                    results = trie.search_exact_query(query[1:-1].lower())
+                    results.sort(key = lambda status: calculate_status_weight(status) if graph.get_edge_data(name, status.author) is None else calculate_status_weight(status) + 5*graph.get_edge_data(name, status.author)['weight'], reverse = True)
+                    for result in results:
+                        print(tabulate([[f"{result.message[:150]}...", result.author]], headers = ["Message", "Author"], tablefmt="fancy_grid"))
+                else:
+                    results = list(trie.search_query(query))
+                    results.sort(key = lambda result: result[0] + calculate_status_weight(result[1]) if graph.get_edge_data(name, result[1].author) is None else calculate_status_weight(result[1]) + 5*graph.get_edge_data(name, result[1].author)['weight'], reverse = True)
+                    results = list(map(lambda x: x[1], results))
+                    for result in results[:10]:
+                        print(tabulate([[f"{result.message[:150]}...", result.author]], headers = ["Message", "Author"], tablefmt="fancy_grid"))
             elif choice == 3:
                 break
             else:
