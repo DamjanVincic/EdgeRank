@@ -73,6 +73,17 @@ def edgerank(status):
     edge = graph.get_edge_data(name, status.author)
     if edge is not None:
         rank += graph.get_edge_data(name, status.author)['weight']
+    
+    friend_affinities = 0
+    friends_of_friends_affinites = 0
+    for neighbor in graph.neighbors(name):
+        if graph.get_edge_data(name, neighbor)['friends'] and graph.get_edge_data(neighbor, status.author):
+            friend_affinities += graph.get_edge_data(neighbor, status.author)['weight']
+        for ff in graph.neighbors(neighbor):
+            if graph.get_edge_data(neighbor, ff)['friends'] and graph.get_edge_data(ff, status.author):
+                friends_of_friends_affinites += graph.get_edge_data(ff, status.author)['weight']
+    rank += friend_affinities/1000 + friends_of_friends_affinites/10000
+    
     rank /= max(1, (datetime.now() - status.publish_time).days)
     return rank
 
