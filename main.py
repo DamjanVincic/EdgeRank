@@ -12,6 +12,7 @@ from entities.reaction import Reaction
 from entities.trie import Trie
 
 users = set()
+friends = {}
 statuses = {}
 shares = {}
 reactions = {}
@@ -69,13 +70,15 @@ def calculate_user_affinity(user1, user2):
 
 def load_users(path):
     users = set()
+    friends = {}
     with open(path, encoding = 'utf-8') as f:
         reader = csv.reader(f)
         data = list(reader)
         for row in data[1:]:
             users.add(row[0])
             users.update(row[2:])
-    return users
+            friends[row[0]] = row[2:]
+    return users, friends
 
 def create_graph(data):
     graph = nx.DiGraph()
@@ -85,26 +88,15 @@ def create_graph(data):
             if user1 != user2:
                 weight = calculate_user_affinity(user1, user2)
                 if weight != 0:
-                    graph.add_edge(user1, user2, weight = calculate_user_affinity(user1, user2))
+                    if user2 in friends[user1] or (graph.get_edge_data(user2, user1) is not None and graph.get_edge_data(user2, user1)['friends']):
+                        graph.add_edge(user1, user2, weight = weight, friends = True)
+                    else:
+                        graph.add_edge(user1, user2, weight = weight, friends = False)
     return graph
 
 if __name__ == "__main__":
-    with open("entities.pickle", "rb") as f:
-        data = pickle.load(f)
-        users = data["users"]
-        statuses = data["statuses"]
-        shares = data["shares"]
-        reactions = data["reactions"]
-        comments = data["comments"]
+    # users, friends = load_users("dataset/friends.csv")
 
-    with open("user_graph.pickle", "rb") as f:
-        graph = pickle.load(f)
-
-    with open("trie.pickle", "rb") as f:
-        trie = pickle.load(f)
-    # trie = Trie(reduce(lambda x, y: x + y, statuses.values()))
-
-    # users = load_users("dataset/friends.csv")
     # for row in parse_files.load_statuses("dataset/original_statuses.csv"):
     #     status = Status(row[0], row[1], row[2], row[3], datetime.strptime(row[4], "%Y-%m-%d %H:%M:%S"), row[5], int(row[6]), int(row[7]), int(row[8]), int(row[9]), int(row[10]), int(row[11]), int(row[12]), int(row[13]), int(row[14]))
     #     if status.author not in statuses:
@@ -133,7 +125,32 @@ if __name__ == "__main__":
     #     else:
     #         comments[comment.status_id].append(comment)
 
+    # dictionary = {"users": users, "friends": friends, "statuses": statuses, "shares": shares, "reactions": reactions, "comments": comments}
+    # with open("entities.pickle", "wb") as f:
+    #     pickle.dump(dictionary, f)
+
+
+    with open("entities.pickle", "rb") as f:
+        data = pickle.load(f)
+        users = data["users"]
+        friends = data["friends"]
+        statuses = data["statuses"]
+        shares = data["shares"]
+        reactions = data["reactions"]
+        comments = data["comments"]
+
     # graph = create_graph(users)
+    # with open("user_graph.pickle", "wb") as f:
+    #     pickle.dump(graph, f)
+
+    with open("user_graph.pickle", "rb") as f:
+        graph = pickle.load(f)
+
+    # print(graph.get_edge_data("Sarina Hudgens", "Tom Davis")['friends'])
+
+    with open("trie.pickle", "rb") as f:
+        trie = pickle.load(f)
+    # trie = Trie(reduce(lambda x, y: x + y, statuses.values()))
 
     name = input("Enter a user's name: ").title()
     while name not in users:
@@ -173,6 +190,6 @@ if __name__ == "__main__":
     # with open("user_graph.pickle", 'wb') as f:
     #     pickle.dump(graph, f)
     
-    # dictionary = {"users": users, "statuses": statuses, "shares": shares, "reactions": reactions, "comments": comments}
+    # dictionary = {"users": users, "friends": friends, "statuses": statuses, "shares": shares, "reactions": reactions, "comments": comments}
     # with open("entities.pickle", "wb") as f:
     #     pickle.dump(dictionary, f)
