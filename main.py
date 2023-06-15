@@ -4,6 +4,7 @@ from datetime import datetime
 import pickle
 from functools import reduce
 from tabulate import tabulate
+import copy
 import parse_files
 from entities.status import Status
 from entities.comment import Comment
@@ -73,17 +74,6 @@ def edgerank(status):
     edge = graph.get_edge_data(name, status.author)
     if edge is not None:
         rank += graph.get_edge_data(name, status.author)['weight']
-    
-    friend_affinities = 0
-    friends_of_friends_affinites = 0
-    for neighbor in graph.neighbors(name):
-        if graph.get_edge_data(name, neighbor)['friends'] and graph.get_edge_data(neighbor, status.author):
-            friend_affinities += graph.get_edge_data(neighbor, status.author)['weight']
-        for ff in graph.neighbors(neighbor):
-            if graph.get_edge_data(neighbor, ff)['friends'] and graph.get_edge_data(ff, status.author):
-                friends_of_friends_affinites += graph.get_edge_data(ff, status.author)['weight']
-    rank += friend_affinities/1000 + friends_of_friends_affinites/10000
-    
     rank /= max(1, (datetime.now() - status.publish_time).days)
     return rank
 
@@ -112,6 +102,28 @@ def create_graph(data):
                     else:
                         graph.add_edge(user1, user2, weight = weight, friends = False)
     return graph
+
+def add_friend_affinities(graph):
+    graph_copy = copy.deepcopy(graph)
+    for node in graph.nodes:
+        for neighbor in graph.neighbors(node):
+            if graph.get_edge_data(node, neighbor)['friends']:
+                for node2 in graph.neighbors(neighbor):
+                    if node2 != node and node2 != neighbor:
+                        if graph_copy.get_edge_data(node, node2) is None:
+                            graph_copy.add_edge(node, node2, weight = graph.get_edge_data(neighbor, node2)['weight']/1000)
+                        else:
+                            graph_copy.get_edge_data(node, node2)['weight'] += graph.get_edge_data(neighbor, node2)['weight']/1000
+            
+            for ff in graph.neighbors(neighbor):
+                if graph.get_edge_data(neighbor, ff)['friends']:
+                    for node2 in graph.neighbors(ff):
+                        if node2 != node and node2 != ff and node2 != neighbor:
+                            if graph_copy.get_edge_data(node, node2) is None:
+                                graph_copy.add_edge(node, node2, weight = graph.get_edge_data(ff, node2)['weight']/10000)
+                            else:
+                                graph_copy.get_edge_data(node, node2)['weight'] += graph.get_edge_data(ff, node2)['weight']/10000
+    return graph_copy
 
 if __name__ == "__main__":
     # users, friends = load_users("dataset/friends.csv")
@@ -162,8 +174,15 @@ if __name__ == "__main__":
     # with open("user_graph.pickle", "wb") as f:
     #     pickle.dump(graph, f)
 
-    with open("user_graph.pickle", "rb") as f:
+    # with open("user_graph.pickle", "rb") as f:
+    #     graph = pickle.load(f)
+
+    with open("friend_user_graph.pickle", "rb") as f:
         graph = pickle.load(f)
+
+    # graph = add_friend_affinities(graph)
+    # with open("friend_user_graph.pickle", "wb") as f:
+    #     pickle.dump(graph, f)
 
     with open("trie.pickle", "rb") as f:
         trie = pickle.load(f)
@@ -181,6 +200,7 @@ if __name__ == "__main__":
             if choice == 1:
                 recommended_statuses = sorted(reduce(lambda x, y: x + y, statuses.values()), key = edgerank, reverse = True)
                 for status in recommended_statuses[:10]:
+                    # print(f"Affinity: {0 if graph.get_edge_data(name, status.author) is None else graph.get_edge_data(name, status.author)['weight']}, Weight: {calculate_status_weight(status)}, Edgerank: {edgerank(status)}, Time posted: {status.publish_time}")
                     print(tabulate([[f"{status.message[:150]}...", status.author]], headers = ["Message", "Author"], tablefmt="fancy_grid"))
             elif choice == 2:
                 query = input("Enter search: ").lower()
