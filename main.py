@@ -125,6 +125,21 @@ def add_friend_affinities(graph):
                                 graph_copy.get_edge_data(node, node2)['weight'] += graph.get_edge_data(ff, node2)['weight']/10000
     return graph_copy
 
+def format_status(status):
+    status_data = [
+        ["Message", f"{status.message[:160]}..."],
+        ["Author", status.author],
+        ["Publish Time", status.publish_time],
+        ["Reactions", status.reaction_count],
+        ["Comments", status.comment_count],
+        ["Shares", status.share_count]
+    ]
+    table = tabulate(status_data, headers=["", "New Post"], tablefmt="fancy_grid")
+    return table
+
+def print_status(status):
+    print(f"Message: {status.message}\nAuthor: {status.author}\nPublish Time: {status.publish_time}\nReactions: {status.reaction_count}\nComments: {status.comment_count}\nShares: {status.share_count}\n\n------\n")
+
 if __name__ == "__main__":
     # users, friends = load_users("dataset/friends.csv")
 
@@ -157,11 +172,11 @@ if __name__ == "__main__":
     #         comments[comment.status_id].append(comment)
 
     # dictionary = {"users": users, "friends": friends, "statuses": statuses, "shares": shares, "reactions": reactions, "comments": comments}
-    # with open("entities.pickle", "wb") as f:
+    # with open("pickles/entities.pickle", "wb") as f:
     #     pickle.dump(dictionary, f)
 
 
-    with open("entities.pickle", "rb") as f:
+    with open("pickles/entities.pickle", "rb") as f:
         data = pickle.load(f)
         users = data["users"]
         friends = data["friends"]
@@ -171,20 +186,20 @@ if __name__ == "__main__":
         comments = data["comments"]
 
     # graph = create_graph(users)
-    # with open("user_graph.pickle", "wb") as f:
+    # with open("pickles/user_graph.pickle", "wb") as f:
     #     pickle.dump(graph, f)
 
-    # with open("user_graph.pickle", "rb") as f:
+    # with open("pickles/user_graph.pickle", "rb") as f:
     #     graph = pickle.load(f)
 
-    with open("friend_user_graph.pickle", "rb") as f:
+    with open("pickles/friend_user_graph.pickle", "rb") as f:
         graph = pickle.load(f)
 
     # graph = add_friend_affinities(graph)
-    # with open("friend_user_graph.pickle", "wb") as f:
+    # with open("pickles/friend_user_graph.pickle", "wb") as f:
     #     pickle.dump(graph, f)
 
-    with open("trie.pickle", "rb") as f:
+    with open("pickles/trie.pickle", "rb") as f:
         trie = pickle.load(f)
     # trie = Trie(reduce(lambda x, y: x + y, statuses.values()))
 
@@ -201,7 +216,9 @@ if __name__ == "__main__":
                 recommended_statuses = sorted(reduce(lambda x, y: x + y, statuses.values()), key = edgerank, reverse = True)
                 for status in recommended_statuses[:10]:
                     # print(f"Affinity: {0 if graph.get_edge_data(name, status.author) is None else graph.get_edge_data(name, status.author)['weight']}, Weight: {calculate_status_weight(status)}, Edgerank: {edgerank(status)}, Time posted: {status.publish_time}")
-                    print(tabulate([[f"{status.message[:150]}...", status.author]], headers = ["Message", "Author"], tablefmt="fancy_grid"))
+                    # print(tabulate([[f"{status.message[:150]}...", status.author]], headers = ["Message", "Author"], tablefmt="fancy_grid"))
+                    # print(format_status(status))
+                    print_status(status)
             elif choice == 2:
                 query = input("Enter search: ").lower()
                 if query[-1] == '*':
@@ -210,13 +227,15 @@ if __name__ == "__main__":
                     results = trie.search_exact_query(query[1:-1].lower())
                     results.sort(key = edgerank, reverse = True)
                     for result in results[:10]:
-                        print(tabulate([[f"{result.message[:150]}...", result.author]], headers = ["Message", "Author"], tablefmt="fancy_grid"))
+                        # print(tabulate([[f"{result.message[:150]}...", result.author]], headers = ["Message", "Author"], tablefmt="fancy_grid"))
+                        print_status(status)
                 else:
                     results = list(trie.search_query(query))
                     results.sort(key = lambda result: result[0] + edgerank(result[1]), reverse = True)
                     results = list(map(lambda x: x[1], results))
                     for result in results[:10]:
-                        print(tabulate([[f"{result.message[:150]}...", result.author]], headers = ["Message", "Author"], tablefmt="fancy_grid"))
+                        # print(tabulate([[f"{result.message[:150]}...", result.author]], headers = ["Message", "Author"], tablefmt="fancy_grid"))
+                        print_status(status)
             elif choice == 3:
                 break
             else:
@@ -224,9 +243,9 @@ if __name__ == "__main__":
         except:
             pass
 
-    # with open("user_graph.pickle", 'wb') as f:
+    # with open("pickles/user_graph.pickle", 'wb') as f:
     #     pickle.dump(graph, f)
     
     # dictionary = {"users": users, "friends": friends, "statuses": statuses, "shares": shares, "reactions": reactions, "comments": comments}
-    # with open("entities.pickle", "wb") as f:
+    # with open("pickles/entities.pickle", "wb") as f:
     #     pickle.dump(dictionary, f)
