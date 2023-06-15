@@ -228,14 +228,14 @@ if __name__ == "__main__":
                     results.sort(key = edgerank, reverse = True)
                     for result in results[:10]:
                         # print(tabulate([[f"{result.message[:150]}...", result.author]], headers = ["Message", "Author"], tablefmt="fancy_grid"))
-                        print_status(status)
+                        print_status(result)
                 else:
                     results = list(trie.search_query(query))
                     results.sort(key = lambda result: result[0] + edgerank(result[1]), reverse = True)
                     results = list(map(lambda x: x[1], results))
                     for result in results[:10]:
                         # print(tabulate([[f"{result.message[:150]}...", result.author]], headers = ["Message", "Author"], tablefmt="fancy_grid"))
-                        print_status(status)
+                        print_status(result)
             elif choice == 3:
                 break
             else:
