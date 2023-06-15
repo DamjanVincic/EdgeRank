@@ -68,6 +68,14 @@ def calculate_user_affinity(user1, user2):
 
     return affinity
 
+def edgerank(status):
+    rank = calculate_status_weight(status)
+    edge = graph.get_edge_data(name, status.author)
+    if edge is not None:
+        rank += graph.get_edge_data(name, status.author)['weight']
+    rank /= max(1, (datetime.now() - status.publish_time).days)
+    return rank
+
 def load_users(path):
     users = set()
     friends = {}
@@ -146,8 +154,6 @@ if __name__ == "__main__":
     with open("user_graph.pickle", "rb") as f:
         graph = pickle.load(f)
 
-    # print(graph.get_edge_data("Sarina Hudgens", "Tom Davis")['friends'])
-
     with open("trie.pickle", "rb") as f:
         trie = pickle.load(f)
     # trie = Trie(reduce(lambda x, y: x + y, statuses.values()))
@@ -162,7 +168,7 @@ if __name__ == "__main__":
         try:
             choice = int(input("> "))
             if choice == 1:
-                recommended_statuses = sorted(reduce(lambda x, y: x + y, statuses.values()), key = lambda status: calculate_status_weight(status) if graph.get_edge_data(name, status.author) is None else calculate_status_weight(status) + 5*graph.get_edge_data(name, status.author)['weight'], reverse = True)
+                recommended_statuses = sorted(reduce(lambda x, y: x + y, statuses.values()), key = edgerank, reverse = True)
                 for status in recommended_statuses[:10]:
                     print(tabulate([[f"{status.message[:150]}...", status.author]], headers = ["Message", "Author"], tablefmt="fancy_grid"))
             elif choice == 2:
@@ -171,12 +177,12 @@ if __name__ == "__main__":
                     print(", ".join(trie.search_prefix(query[:-1])))
                 elif query[0] == '"' and query[-1] == '"':
                     results = trie.search_exact_query(query[1:-1].lower())
-                    results.sort(key = lambda status: calculate_status_weight(status) if graph.get_edge_data(name, status.author) is None else calculate_status_weight(status) + 5*graph.get_edge_data(name, status.author)['weight'], reverse = True)
+                    results.sort(key = edgerank, reverse = True)
                     for result in results[:10]:
                         print(tabulate([[f"{result.message[:150]}...", result.author]], headers = ["Message", "Author"], tablefmt="fancy_grid"))
                 else:
                     results = list(trie.search_query(query))
-                    results.sort(key = lambda result: result[0] + calculate_status_weight(result[1]) if graph.get_edge_data(name, result[1].author) is None else calculate_status_weight(result[1]) + 5*graph.get_edge_data(name, result[1].author)['weight'], reverse = True)
+                    results.sort(key = lambda result: result[0] + edgerank(result[1]), reverse = True)
                     results = list(map(lambda x: x[1], results))
                     for result in results[:10]:
                         print(tabulate([[f"{result.message[:150]}...", result.author]], headers = ["Message", "Author"], tablefmt="fancy_grid"))
