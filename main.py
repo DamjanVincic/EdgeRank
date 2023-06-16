@@ -41,7 +41,7 @@ def calculate_user_affinity(user1, user2):
             if status.id in shares:
                 for share in shares[status.id]:
                     if share.sharer == user1:
-                        status_affinity += 2.0
+                        status_affinity += 2.0 / max(1, (datetime.now() - share.share_time).days)
             
             if status.id in reactions:
                 for reaction in reactions[status.id]:
