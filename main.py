@@ -89,18 +89,47 @@ def load_users(path):
             friends[row[0]] = row[2:]
     return users, friends
 
-def create_graph(data):
+def create_graph():
     graph = nx.DiGraph()
-    graph.add_nodes_from(data)
-    for user1 in data:
-        for user2 in data:
-            if user1 != user2:
-                weight = calculate_user_affinity(user1, user2)
-                if weight != 0:
-                    if user2 in friends[user1] or (graph.get_edge_data(user2, user1) is not None and graph.get_edge_data(user2, user1)['friends']):
-                        graph.add_edge(user1, user2, weight = weight, friends = True)
-                    else:
-                        graph.add_edge(user1, user2, weight = weight, friends = False)
+    graph.add_nodes_from(users)
+
+    for user in friends:
+        for friend in friends[user]:
+            graph.add_edge(user, friend, weight = 3.0, friends = True)
+            graph.add_edge(friend, user, weight = 3.0, friends = True)
+
+    for share in reduce(lambda x, y: x + y, shares.values()):
+        user1 = share.sharer
+        user2 = statuses[share.status_id].author
+        if graph.get_edge_data(user1, user2) is None:
+            graph.add_edge(user1, user2, weight = 2.0 / max(1, (datetime.now() - share.share_time).days), friends = False)
+        else:
+            graph.get_edge_data(user1, user2)['weight'] += 2.0 / max(1, (datetime.now() - share.share_time).days)
+        if user2 in friends[user1] or (graph.get_edge_data(user2, user1) is not None and graph.get_edge_data(user2, user1)['friends']):
+            graph.get_edge_data(user1, user2)['friends'] = True
+    
+    reaction_weights = {"likes": 0.5, "loves": 1.0, "wows": 1.5, "hahas": 0.5, "sads": 0.25, "angrys": 0.75, "special": 0}
+    for reaction in reduce(lambda x, y: x + y, reactions.values()):
+        user1 = reaction.reactor
+        user2 = statuses[reaction.status_id].author
+
+        if graph.get_edge_data(user1, user2) is None:
+            graph.add_edge(user1, user2, weight = reaction_weights[reaction.type] / max(1, (datetime.now() - reaction.reaction_time).days), friends = False)
+        else:
+            graph.get_edge_data(user1, user2)['weight'] += reaction_weights[reaction.type] / max(1, (datetime.now() - reaction.reaction_time).days)
+        if user2 in friends[user1] or (graph.get_edge_data(user2, user1) is not None and graph.get_edge_data(user2, user1)['friends']):
+            graph.get_edge_data(user1, user2)['friends'] = True
+
+    for comment in reduce(lambda x, y: x + y, comments.values()):
+        user1 = comment.author
+        user2 = statuses[comment.status_id].author
+        if graph.get_edge_data(user1, user2) is None:
+            graph.add_edge(user1, user2, weight = 1.0 / max(1, (datetime.now() - comment.publish_time).days), friends = False)
+        else:
+            graph.get_edge_data(user1, user2)['weight'] += 1.0 / max(1, (datetime.now() - comment.publish_time).days)
+        if user2 in friends[user1] or (graph.get_edge_data(user2, user1) is not None and graph.get_edge_data(user2, user1)['friends']):
+            graph.get_edge_data(user1, user2)['friends'] = True
+
     return graph
 
 def add_friend_affinities(graph):
@@ -141,6 +170,69 @@ def print_status(status):
     print(f"Message: {status.message}\nAuthor: {status.author}\nPublish Time: {status.publish_time}\nReactions: {status.reaction_count}\nComments: {status.comment_count}\nShares: {status.share_count}\n\n------\n")
 
 if __name__ == "__main__":
+    # users, friends = load_users("dataset/friends.csv")
+
+    # for row in parse_files.load_statuses("dataset/original_statuses.csv"):
+    #     status = Status(row[0], row[1], row[2], row[3], datetime.strptime(row[4], "%Y-%m-%d %H:%M:%S"), row[5], int(row[6]), int(row[7]), int(row[8]), int(row[9]), int(row[10]), int(row[11]), int(row[12]), int(row[13]), int(row[14]))
+    #     statuses[status.id] = status
+        # if status.id not in statuses:
+        #     statuses[status.author] = [status]
+        # else:
+        #     statuses[status.author].append(status)
+    # for row in parse_files.load_statuses("dataset/test_statuses.csv"):
+    #     status = Status(row[0], row[1], row[2], row[3], datetime.strptime(row[4], "%Y-%m-%d %H:%M:%S"), row[5], int(row[6]), int(row[7]), int(row[8]), int(row[9]), int(row[10]), int(row[11]), int(row[12]), int(row[13]), int(row[14]))
+    #     statuses[status.id] = status
+        # if status.author not in statuses:
+        #     statuses[status.author] = [status]
+        # else:
+        #     statuses[status.author].append(status)
+
+
+    # for row in parse_files.load_shares("dataset/original_shares.csv"):
+    #     share = Share(row[0], row[1], datetime.strptime(row[2], "%Y-%m-%d %H:%M:%S"))
+    #     if share.sharer not in shares:
+    #         shares[share.sharer] = [share]
+    #     else:
+    #         shares[share.sharer].append(share)
+    # for row in parse_files.load_shares("dataset/test_shares.csv"):
+    #     share = Share(row[0], row[1], datetime.strptime(row[2], "%Y-%m-%d %H:%M:%S"))
+    #     if share.sharer not in shares:
+    #         shares[share.sharer] = [share]
+    #     else:
+    #         shares[share.sharer].append(share)
+    
+
+    # for row in parse_files.load_reactions("dataset/original_reactions.csv"):
+    #     reaction = Reaction(row[0], row[1], row[2], datetime.strptime(row[3], "%Y-%m-%d %H:%M:%S"))
+    #     if reaction.reactor not in reactions:
+    #         reactions[reaction.reactor] = [reaction]
+    #     else:
+    #         reactions[reaction.reactor].append(reaction)
+    # for row in parse_files.load_reactions("dataset/test_reactions.csv"):
+    #     reaction = Reaction(row[0], row[1], row[2], datetime.strptime(row[3], "%Y-%m-%d %H:%M:%S"))
+    #     if reaction.reactor not in reactions:
+    #         reactions[reaction.reactor] = [reaction]
+    #     else:
+    #         reactions[reaction.reactor].append(reaction)
+    
+
+    # for row in parse_files.load_comments("dataset/original_comments.csv"):
+    #     comment = Comment(row[0], row[1], row[2], row[3], row[4], datetime.strptime(row[5], "%Y-%m-%d %H:%M:%S"), int(row[6]), int(row[7]))
+    #     if comment.author not in comments:
+    #         comments[comment.author] = [comment]
+    #     else:
+    #         comments[comment.author].append(comment)
+    # for row in parse_files.load_comments("dataset/test_comments.csv"):
+    #     comment = Comment(row[0], row[1], row[2], row[3], row[4], datetime.strptime(row[5], "%Y-%m-%d %H:%M:%S"), int(row[6]), int(row[7]))
+    #     if comment.author not in comments:
+    #         comments[comment.author] = [comment]
+    #     else:
+    #         comments[comment.author].append(comment)
+
+    # dictionary = {"users": users, "friends": friends, "statuses": statuses, "shares": shares, "reactions": reactions, "comments": comments}
+    # with open("test_entities.pickle", "wb") as f:
+    #     pickle.dump(dictionary, f)
+
     with open("pickles/test_entities.pickle", "rb") as f:
         data = pickle.load(f)
         users = data["users"]
