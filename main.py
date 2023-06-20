@@ -135,23 +135,21 @@ def create_graph():
 def add_friend_affinities(graph):
     graph_copy = copy.deepcopy(graph)
     for node in graph.nodes:
-        for neighbor in graph.neighbors(node):
-            if graph.get_edge_data(node, neighbor)['friends']:
-                for node2 in graph.neighbors(neighbor):
-                    if node2 != node and node2 != neighbor:
+        for friend in friends[node]:
+            for node2 in graph.neighbors(friend):
+                if node2 != node and node2 != friend:
+                    if graph_copy.get_edge_data(node, node2) is None:
+                        graph_copy.add_edge(node, node2, weight = graph.get_edge_data(friend, node2)['weight']/1000, friends = False)
+                    else:
+                        graph_copy.get_edge_data(node, node2)['weight'] += graph.get_edge_data(friend, node2)['weight']/1000
+
+            for ff in friends[friend]:
+                for node2 in graph.neighbors(ff):
+                    if node2 != node and node2 != ff:
                         if graph_copy.get_edge_data(node, node2) is None:
-                            graph_copy.add_edge(node, node2, weight = graph.get_edge_data(neighbor, node2)['weight']/1000)
+                            graph_copy.add_edge(node, node2, weight = graph.get_edge_data(ff, node2)['weight']/1000, friends = False)
                         else:
-                            graph_copy.get_edge_data(node, node2)['weight'] += graph.get_edge_data(neighbor, node2)['weight']/1000
-            
-            for ff in graph.neighbors(neighbor):
-                if graph.get_edge_data(neighbor, ff)['friends']:
-                    for node2 in graph.neighbors(ff):
-                        if node2 != node and node2 != ff and node2 != neighbor:
-                            if graph_copy.get_edge_data(node, node2) is None:
-                                graph_copy.add_edge(node, node2, weight = graph.get_edge_data(ff, node2)['weight']/10000)
-                            else:
-                                graph_copy.get_edge_data(node, node2)['weight'] += graph.get_edge_data(ff, node2)['weight']/10000
+                            graph_copy.get_edge_data(node, node2)['weight'] += graph.get_edge_data(ff, node2)['weight']/1000
     return graph_copy
 
 def format_status(status):
