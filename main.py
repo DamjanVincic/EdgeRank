@@ -168,70 +168,7 @@ def print_status(status):
     print(f"Message: {status.message}\nAuthor: {status.author}\nPublish Time: {status.publish_time}\nReactions: {status.reaction_count}\nComments: {status.comment_count}\nShares: {status.share_count}\n\n------\n")
 
 if __name__ == "__main__":
-    # users, friends = load_users("dataset/friends.csv")
-
-    # for row in parse_files.load_statuses("dataset/original_statuses.csv"):
-    #     status = Status(row[0], row[1], row[2], row[3], datetime.strptime(row[4], "%Y-%m-%d %H:%M:%S"), row[5], int(row[6]), int(row[7]), int(row[8]), int(row[9]), int(row[10]), int(row[11]), int(row[12]), int(row[13]), int(row[14]))
-    #     statuses[status.id] = status
-        # if status.id not in statuses:
-        #     statuses[status.author] = [status]
-        # else:
-        #     statuses[status.author].append(status)
-    # for row in parse_files.load_statuses("dataset/test_statuses.csv"):
-    #     status = Status(row[0], row[1], row[2], row[3], datetime.strptime(row[4], "%Y-%m-%d %H:%M:%S"), row[5], int(row[6]), int(row[7]), int(row[8]), int(row[9]), int(row[10]), int(row[11]), int(row[12]), int(row[13]), int(row[14]))
-    #     statuses[status.id] = status
-        # if status.author not in statuses:
-        #     statuses[status.author] = [status]
-        # else:
-        #     statuses[status.author].append(status)
-
-
-    # for row in parse_files.load_shares("dataset/original_shares.csv"):
-    #     share = Share(row[0], row[1], datetime.strptime(row[2], "%Y-%m-%d %H:%M:%S"))
-    #     if share.sharer not in shares:
-    #         shares[share.sharer] = [share]
-    #     else:
-    #         shares[share.sharer].append(share)
-    # for row in parse_files.load_shares("dataset/test_shares.csv"):
-    #     share = Share(row[0], row[1], datetime.strptime(row[2], "%Y-%m-%d %H:%M:%S"))
-    #     if share.sharer not in shares:
-    #         shares[share.sharer] = [share]
-    #     else:
-    #         shares[share.sharer].append(share)
-    
-
-    # for row in parse_files.load_reactions("dataset/original_reactions.csv"):
-    #     reaction = Reaction(row[0], row[1], row[2], datetime.strptime(row[3], "%Y-%m-%d %H:%M:%S"))
-    #     if reaction.reactor not in reactions:
-    #         reactions[reaction.reactor] = [reaction]
-    #     else:
-    #         reactions[reaction.reactor].append(reaction)
-    # for row in parse_files.load_reactions("dataset/test_reactions.csv"):
-    #     reaction = Reaction(row[0], row[1], row[2], datetime.strptime(row[3], "%Y-%m-%d %H:%M:%S"))
-    #     if reaction.reactor not in reactions:
-    #         reactions[reaction.reactor] = [reaction]
-    #     else:
-    #         reactions[reaction.reactor].append(reaction)
-    
-
-    # for row in parse_files.load_comments("dataset/original_comments.csv"):
-    #     comment = Comment(row[0], row[1], row[2], row[3], row[4], datetime.strptime(row[5], "%Y-%m-%d %H:%M:%S"), int(row[6]), int(row[7]))
-    #     if comment.author not in comments:
-    #         comments[comment.author] = [comment]
-    #     else:
-    #         comments[comment.author].append(comment)
-    # for row in parse_files.load_comments("dataset/test_comments.csv"):
-    #     comment = Comment(row[0], row[1], row[2], row[3], row[4], datetime.strptime(row[5], "%Y-%m-%d %H:%M:%S"), int(row[6]), int(row[7]))
-    #     if comment.author not in comments:
-    #         comments[comment.author] = [comment]
-    #     else:
-    #         comments[comment.author].append(comment)
-
-    # dictionary = {"users": users, "friends": friends, "statuses": statuses, "shares": shares, "reactions": reactions, "comments": comments}
-    # with open("test_entities.pickle", "wb") as f:
-    #     pickle.dump(dictionary, f)
-
-    with open("pickles/test_entities.pickle", "rb") as f:
+    with open("pickles/test/entities.pickle", "rb") as f:
         data = pickle.load(f)
         users = data["users"]
         friends = data["friends"]
@@ -240,10 +177,10 @@ if __name__ == "__main__":
         reactions = data["reactions"]
         comments = data["comments"]
 
-    with open("pickles/friend_user_graph.pickle", "rb") as f:
+    with open("pickles/test/friend_user_graph.pickle", "rb") as f:
         graph = pickle.load(f)
 
-    with open("pickles/test_trie.pickle", "rb") as f:
+    with open("pickles/test/trie.pickle", "rb") as f:
         trie = pickle.load(f)
 
     
@@ -257,7 +194,7 @@ if __name__ == "__main__":
         try:
             choice = int(input("> "))
             if choice == 1:
-                recommended_statuses = sorted(reduce(lambda x, y: x + y, statuses.values()), key = edgerank, reverse = True)
+                recommended_statuses = sorted(statuses.values(), key = edgerank, reverse = True)
                 for status in recommended_statuses[:10]:
                     print_status(status)
             elif choice == 2:
