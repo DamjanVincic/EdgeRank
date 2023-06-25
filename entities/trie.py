@@ -1,3 +1,5 @@
+import copy
+from colorama import Fore, Style
 import string
 
 class TrieNode(object):
@@ -45,16 +47,18 @@ class Trie(object):
     def search_query(self, query):
         results = {}
         for idx, word in enumerate(query.split(), start = 1):
-            word = self.strip_word(word)
+            word = self.strip_word(word).lower()
             if word:
                 filtered_statuses = self.search_word(word)
                 for status_id in filtered_statuses:
                     if status_id not in results:
-                        results[status_id] = filtered_statuses[status_id]
+                        results[status_id] = copy.deepcopy(filtered_statuses[status_id])
                     else:
                         results[status_id][0] += filtered_statuses[status_id][0]
                         if idx == len(query.split()):
                             results[status_id][0] += 10
+                    
+                    results[status_id][1].message = self.highlight_text(word, results[status_id][1].message)
         return results.values()
     
     def search_exact_query(self, query):
@@ -80,3 +84,12 @@ class Trie(object):
         for char, child in node.children.items():
             words.extend(self.get_words_from_prefix(child, prefix + char))
         return words
+    
+    def highlight_text(self, word, text):
+        indexes = [i for i in range(len(text)) if text.lower().startswith(word, i)]
+        offset = 0
+        for index in indexes:
+            index += offset
+            text = f"{text[:index]}{Fore.RED}{text[index:index+len(word)]}{Style.RESET_ALL}{text[index+len(word):]}"
+            offset += len(Fore.RED) + len(Style.RESET_ALL)
+        return text

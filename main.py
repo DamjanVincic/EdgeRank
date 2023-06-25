@@ -1,4 +1,5 @@
 import csv
+import colorama
 import networkx as nx
 from datetime import datetime
 import pickle
@@ -168,6 +169,11 @@ def print_status(status):
     print(f"Message: {status.message}\nAuthor: {status.author}\nPublish Time: {status.publish_time}\nReactions: {status.reaction_count}\nComments: {status.comment_count}\nShares: {status.share_count}\n\n------\n")
 
 if __name__ == "__main__":
+    colorama.init()
+
+    with open("pickles/test/user_graph.pickle", "rb") as f:
+        graph = pickle.load(f)
+
     with open("pickles/test/entities.pickle", "rb") as f:
         data = pickle.load(f)
         users = data["users"]
@@ -177,8 +183,8 @@ if __name__ == "__main__":
         reactions = data["reactions"]
         comments = data["comments"]
 
-    with open("pickles/test/friend_user_graph.pickle", "rb") as f:
-        graph = pickle.load(f)
+    # with open("pickles/test/friend_user_graph.pickle", "rb") as f:
+    #     graph = pickle.load(f)
 
     with open("pickles/test/trie.pickle", "rb") as f:
         trie = pickle.load(f)
