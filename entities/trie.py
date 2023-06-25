@@ -44,7 +44,7 @@ class Trie(object):
     
     def search_query(self, query):
         results = {}
-        for word in query.split():
+        for idx, word in enumerate(query.split(), start = 1):
             word = self.strip_word(word)
             if word:
                 filtered_statuses = self.search_word(word)
@@ -53,6 +53,8 @@ class Trie(object):
                         results[status_id] = filtered_statuses[status_id]
                     else:
                         results[status_id][0] += filtered_statuses[status_id][0]
+                        if idx == len(query.split()):
+                            results[status_id][0] += 10
         return results.values()
     
     def search_exact_query(self, query):
