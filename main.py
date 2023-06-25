@@ -155,7 +155,7 @@ def add_friend_affinities(graph):
 
 def format_status(status):
     status_data = [
-        ["Message", f"{status.message[:160]}..."],
+        ["Message", f"{status.message[:160]}{colorama.Style.RESET_ALL}..."],
         ["Author", status.author],
         ["Publish Time", status.publish_time],
         ["Reactions", status.reaction_count],

@@ -65,8 +65,10 @@ class Trie(object):
         results = []
         filtered_statuses = self.search_word(self.strip_word(query.split()[0]))
         for status_id in filtered_statuses:
-            if query in ' '.join([self.strip_word(word).lower() for word in filtered_statuses[status_id][1].message.split()]):
-                results.append(filtered_statuses[status_id][1])
+            if query in ' '.join(self.strip_word(word).lower() for word in filtered_statuses[status_id][1].message.split()):
+                status = copy.deepcopy(filtered_statuses[status_id][1])
+                status.message = self.highlight_text(query, status.message)
+                results.append(status)
         return results
     
     def search_prefix(self, prefix):
