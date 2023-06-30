@@ -33,43 +33,6 @@ def calculate_status_weight(status):
     weight /= time_decay
     return weight
 
-def calculate_user_affinity(user1, user2):
-    affinity = 0
-
-    if user2 in statuses:
-        for status in statuses[user2]:
-            status_affinity = 0
-            if status.id in shares:
-                for share in shares[status.id]:
-                    if share.sharer == user1:
-                        status_affinity += 2.0 / max(1, (datetime.now() - share.share_time).days)
-            
-            if status.id in reactions:
-                for reaction in reactions[status.id]:
-                    if reaction.reactor == user1:
-                        reaction_time_decay = max(1, (datetime.now() - reaction.reaction_time).days)
-                        if reaction.type == "likes":
-                            status_affinity += 0.5 / reaction_time_decay
-                        elif reaction.type == "loves":
-                            status_affinity += 1.0 / reaction_time_decay
-                        elif reaction.type == "wows":
-                            status_affinity += 1.5 / reaction_time_decay
-                        elif reaction.type =="hahas":
-                            status_affinity += 0.5 / reaction_time_decay
-                        elif reaction.type == "sads":
-                            status_affinity += 0.25 / reaction_time_decay
-                        elif reaction.type == "angrys":
-                            status_affinity += 0.75 / reaction_time_decay
-
-            if status.id in comments:
-                for comment in comments[status.id]:
-                    if comment.author == user1:
-                        status_affinity += 1.0 / max(1, (datetime.now() - comment.publish_time).days)
-            
-            affinity += status_affinity
-
-    return affinity
-
 def edgerank(status):
     rank = calculate_status_weight(status)
     edge = graph.get_edge_data(name, status.author)
