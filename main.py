@@ -134,23 +134,70 @@ def print_status(status):
 if __name__ == "__main__":
     colorama.init()
 
-    with open("pickles/test/user_graph.pickle", "rb") as f:
-        graph = pickle.load(f)
+    users, friends = load_users("dataset/friends.csv")
 
-    with open("pickles/test/entities.pickle", "rb") as f:
-        data = pickle.load(f)
-        users = data["users"]
-        friends = data["friends"]
-        statuses = data["statuses"]
-        shares = data["shares"]
-        reactions = data["reactions"]
-        comments = data["comments"]
+    for row in parse_files.load_statuses("dataset/original_statuses.csv"):
+        status = Status(row[0], row[1], row[2], row[3], datetime.strptime(row[4], "%Y-%m-%d %H:%M:%S"), row[5], int(row[6]), int(row[7]), int(row[8]), int(row[9]), int(row[10]), int(row[11]), int(row[12]), int(row[13]), int(row[14]))
+        statuses[status.id] = status
+    for row in parse_files.load_statuses("dataset/test_statuses.csv"):
+        status = Status(row[0], row[1], row[2], row[3], datetime.strptime(row[4], "%Y-%m-%d %H:%M:%S"), row[5], int(row[6]), int(row[7]), int(row[8]), int(row[9]), int(row[10]), int(row[11]), int(row[12]), int(row[13]), int(row[14]))
+        statuses[status.id] = status
+    
 
-    # with open("pickles/test/friend_user_graph.pickle", "rb") as f:
-    #     graph = pickle.load(f)
+    for row in parse_files.load_shares("dataset/original_shares.csv"):
+        share = Share(row[0], row[1], datetime.strptime(row[2], "%Y-%m-%d %H:%M:%S"))
+        if share.sharer not in shares:
+            shares[share.sharer] = [share]
+        else:
+            shares[share.sharer].append(share)
+    for row in parse_files.load_shares("dataset/test_shares.csv"):
+        share = Share(row[0], row[1], datetime.strptime(row[2], "%Y-%m-%d %H:%M:%S"))
+        if share.sharer not in shares:
+            shares[share.sharer] = [share]
+        else:
+            shares[share.sharer].append(share)
 
-    with open("pickles/test/trie.pickle", "rb") as f:
-        trie = pickle.load(f)
+
+    for row in parse_files.load_reactions("dataset/original_reactions.csv"):
+        reaction = Reaction(row[0], row[1], row[2], datetime.strptime(row[3], "%Y-%m-%d %H:%M:%S"))
+        if reaction.reactor not in reactions:
+            reactions[reaction.reactor] = [reaction]
+        else:
+            reactions[reaction.reactor].append(reaction)
+    for row in parse_files.load_reactions("dataset/test_reactions.csv"):
+        reaction = Reaction(row[0], row[1], row[2], datetime.strptime(row[3], "%Y-%m-%d %H:%M:%S"))
+        if reaction.reactor not in reactions:
+            reactions[reaction.reactor] = [reaction]
+        else:
+            reactions[reaction.reactor].append(reaction)
+
+
+    for row in parse_files.load_comments("dataset/original_comments.csv"):
+        comment = Comment(row[0], row[1], row[2], row[3], row[4], datetime.strptime(row[5], "%Y-%m-%d %H:%M:%S"), int(row[6]), int(row[7]))
+        if comment.author not in comments:
+            comments[comment.author] = [comment]
+        else:
+            comments[comment.author].append(comment)
+    for row in parse_files.load_comments("dataset/test_comments.csv"):
+        comment = Comment(row[0], row[1], row[2], row[3], row[4], datetime.strptime(row[5], "%Y-%m-%d %H:%M:%S"), int(row[6]), int(row[7]))
+        if comment.author not in comments:
+            comments[comment.author] = [comment]
+        else:
+            comments[comment.author].append(comment)
+
+
+    graph = create_graph()
+    trie = Trie(statuses.values())
+
+    with open("pickles/test/user_graph.pickle", "wb") as f:
+        pickle.dump(graph, f)
+    
+    data = {"users": users, "friends": friends, "statuses": statuses, "shares": shares, "reactions": reaction, "comments": comments}
+    with open("pickles/test/entities.pickle", "wb") as f:
+        pickle.dump(data, f)
+
+    with open("pickles/test/trie.pickle", "wb") as f:
+        pickle.dump(trie, f)
 
     
     name = input("Enter a user's name: ").title()
